@@ -14,7 +14,7 @@ async def analyze_file(file: UploadFile = File(...)):
     # 1. Try VirusTotal (Run in threadpool to allow polling)
     vt_result = await run_in_threadpool(vt_service.scan_file, content, filename)
     
-    if vt_result and vt_result.get("risk_score", 0) > 0:
+    if vt_result:
         return {
             "filename": filename,
             "name": filename,
@@ -59,3 +59,39 @@ async def analyze_file(file: UploadFile = File(...)):
 @router.post("/pcap")
 async def analyze_pcap(file: UploadFile = File(...)):
     return pcap_service.analyze(file.file, file.filename)
+
+@router.post("/url")
+async def analyze_url(data: dict):
+    url = data.get("url")
+    if not url:
+        return {"error": "No URL provided"}
+
+    # Run in threadpool
+    vt_result = await run_in_threadpool(vt_service.scan_url, url)
+
+    if vt_result:
+        return {
+            "filename": url,
+            "name": url,
+            "size": "N/A",
+            "type": "URL",
+            "score": vt_result["risk_score"],
+            "risk_score": vt_result["risk_score"],
+            "summary": vt_result["summary"],
+            "threats": vt_result["threats"],
+            "technical_details": vt_result["details"],
+            "source": "VirusTotal"
+        }
+    
+    return {
+        "filename": url,
+        "name": url,
+        "size": "N/A",
+        "type": "URL",
+        "score": 0,
+        "risk_score": 0,
+        "summary": "Analysis Failed. (VirusTotal API Error or Invalid URL).",
+        "threats": ["Analysis Failed"],
+        "technical_details": {"error": "Could not retrieve report from VirusTotal."},
+        "source": "VirusTotal (Error)"
+    }

@@ -1,22 +1,20 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, 
-  File, 
-  Search, 
-  ShieldCheck, 
-  ShieldAlert, 
-  X,
-  FileText,
+import {
+  Upload,
+  File,
+  Search,
+  ShieldCheck,
+  ShieldAlert,
   PieChart as PieChartIcon,
   Activity
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Tooltip 
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip
 } from 'recharts';
 
 import axios from 'axios';
@@ -26,6 +24,8 @@ const FileAnalysis = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedFiles, setScannedFiles] = useState<any[]>([]);
   const [progress, setProgress] = useState(0);
+  const [urlInput, setUrlInput] = useState("");
+  const [isUrlScanning, setIsUrlScanning] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -39,33 +39,33 @@ const FileAnalysis = () => {
   const startScan = async (files: FileList) => {
     setIsScanning(true);
     setProgress(10);
-    
-    const newFiles = [];
-    
+
+    const newFiles: any[] = [];
+
     for (let i = 0; i < files.length; i++) {
       const formData = new FormData();
       formData.append('file', files[i]);
-      
+
       try {
         const res = await axios.post('http://localhost:8000/api/analyze/file', formData, {
           onUploadProgress: (p) => {
-             const percent = p.total ? Math.round((p.loaded * 100) / p.total) : 50;
-             setProgress(percent);
+            const percent = p.total ? Math.round((p.loaded * 100) / p.total) : 50;
+            setProgress(percent);
           }
         });
         newFiles.push(res.data);
       } catch (err) {
         console.error("Scan error", err);
         newFiles.push({
-           name: files[i].name,
-           size: "Error",
-           type: "Error",
-           score: 0,
-           threats: ["Analysis Failed"]
+          name: files[i].name,
+          size: "Error",
+          type: "Error",
+          score: 0,
+          threats: ["Analysis Failed"]
         });
       }
     }
-    
+
     setScannedFiles(prev => [...newFiles, ...prev]);
     setIsScanning(false);
     setProgress(0);
@@ -77,6 +77,19 @@ const FileAnalysis = () => {
     if (e.dataTransfer.files) {
       startScan(e.dataTransfer.files);
     }
+  };
+
+  const handleUrlScan = async () => {
+    if (!urlInput) return;
+    setIsUrlScanning(true);
+    try {
+      const res = await axios.post('http://localhost:8000/api/analyze/url', { url: urlInput });
+      setScannedFiles(prev => [res.data, ...prev]);
+      setUrlInput("");
+    } catch (err) {
+      console.error("URL Scan error", err);
+    }
+    setIsUrlScanning(false);
   };
 
   const pieData = [
@@ -95,16 +108,38 @@ const FileAnalysis = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Upload Zone */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-10"> {/* Increased spacing */}
+          {/* URL Scan Section */}
+          {/* URL Scan Section */}
+          <div className="glass-morphism p-4 rounded-2xl flex gap-4 items-center">
+            <div className="p-3 bg-cyber-blue/10 rounded-xl text-cyber-blue">
+              <Search size={24} />
+            </div>
+            <input
+              type="text"
+              placeholder="Enter URL to scan (e.g., http://malicious-site.com)..."
+              className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 font-mono"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleUrlScan()}
+            />
+            <button
+              onClick={handleUrlScan}
+              disabled={isUrlScanning}
+              className="px-6 py-2 bg-cyber-blue text-cyber-black font-bold rounded-xl hover:shadow-neon-blue transition-all disabled:opacity-50"
+            >
+              {isUrlScanning ? 'SCANNING...' : 'SCAN URL'}
+            </button>
+          </div>
+
           <motion.div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`h-80 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 ${
-              isDragging 
-                ? 'border-cyber-blue bg-cyber-blue bg-opacity-10 scale-[1.02]' 
-                : 'border-white border-opacity-10 bg-white bg-opacity-5'
-            }`}
+            className={`h-64 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300 ${isDragging
+              ? 'border-cyber-blue bg-cyber-blue/20 scale-[1.02]'
+              : 'border-cyber-blue/30 bg-cyber-blue/5'
+              }`}
           >
             {isScanning ? (
               <div className="flex flex-col items-center space-y-6">
@@ -142,13 +177,20 @@ const FileAnalysis = () => {
               </div>
             ) : (
               <>
-                <div className={`p-6 rounded-full bg-white bg-opacity-5 mb-4 ${isDragging ? 'animate-bounce' : ''}`}>
-                  <Upload size={48} className={isDragging ? 'text-cyber-blue' : 'text-gray-500'} />
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-medium text-white">Drag & drop files to scan</p>
-                  <p className="text-gray-500 mt-2">Supports .EXE, .PDF, .ZIP, .JS, .PY and more</p>
-                </div>
+                <label
+                  htmlFor="file-upload"
+                  className="flex flex-col items-center justify-center cursor-pointer group w-full h-full"
+                >
+                  <div className={`p-6 rounded-full bg-white bg-opacity-5 mb-4 group-hover:bg-cyber-blue/20 transition-all duration-300 ${isDragging ? 'animate-bounce' : ''}`}>
+                    <Upload size={48} className={isDragging ? 'text-cyber-blue' : 'text-gray-500 group-hover:text-cyber-blue transition-colors'} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-medium text-white group-hover:text-cyber-blue transition-colors">
+                      Drag & drop or click to browse
+                    </p>
+                    <p className="text-gray-500 mt-2">Supports .EXE, .PDF, .ZIP, .JS, .PY and more</p>
+                  </div>
+                </label>
                 <input
                   type="file"
                   multiple
@@ -156,12 +198,6 @@ const FileAnalysis = () => {
                   id="file-upload"
                   onChange={(e) => e.target.files && startScan(e.target.files)}
                 />
-                <label
-                  htmlFor="file-upload"
-                  className="mt-6 px-8 py-3 bg-cyber-blue text-cyber-black rounded-xl font-bold cursor-pointer hover:shadow-neon-blue transition-all"
-                >
-                  BROWSE FILES
-                </label>
               </>
             )}
           </motion.div>
@@ -191,11 +227,11 @@ const FileAnalysis = () => {
                         <div className={`text-2xl font-bold font-mono ${file.score > 50 ? 'text-cyber-red' : 'text-cyber-green'}`}>{file.score}/100</div>
                       </div>
                     </div>
-                    
+
                     {/* AI Summary Section */}
                     {file.summary && (
                       <div className="mt-3 p-3 bg-white/5 rounded-xl border border-white/10 text-sm text-gray-300 italic">
-                         "{file.summary}"
+                        "{file.summary}"
                       </div>
                     )}
 
@@ -240,11 +276,11 @@ const FileAnalysis = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {pieData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid #333', borderRadius: '12px' }}
                   />
                 </PieChart>
