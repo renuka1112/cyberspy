@@ -2,7 +2,9 @@ from fastapi import APIRouter, UploadFile, File
 from fastapi.concurrency import run_in_threadpool
 from app.services.ai_service import ai_service
 from app.services.pcap_service import pcap_service
+
 from app.services.virustotal_service import vt_service
+from app.services.storage_service import storage_service
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ async def analyze_file(file: UploadFile = File(...)):
     vt_result = await run_in_threadpool(vt_service.scan_file, content, filename)
     
     if vt_result:
-        return {
+        vt_data = {
             "filename": filename,
             "name": filename,
             "size": f"{len(content)/1024:.2f} KB",
@@ -27,13 +29,16 @@ async def analyze_file(file: UploadFile = File(...)):
             "technical_details": vt_result["details"],
             "source": "VirusTotal"
         }
+        # Save to DB
+        storage_service.save_analysis(vt_data)
+        return vt_data
 
     # 2. Fallback to Gemini
     try:
         text_content = content.decode('utf-8')
         ai_result = await ai_service.analyze_text(text_content, filename)
         
-        return {
+        result_data = {
             "filename": filename,
             "name": filename,
             "size": f"{len(content)/1024:.2f} KB",
@@ -42,6 +47,10 @@ async def analyze_file(file: UploadFile = File(...)):
             **ai_result,
             "source": "Gemini AI"
         }
+        
+        # Save to DB
+        storage_service.save_analysis(result_data)
+        return result_data
     except UnicodeDecodeError:
         return {
             "filename": filename,
@@ -66,7 +75,21 @@ async def analyze_qr(file: UploadFile = File(...)):
     # Detect mime type or default to png
     mime_type = file.content_type if file.content_type else "image/png"
     
+    
     result = await ai_service.analyze_image(content, mime_type)
+    # Save Image Analysis
+    storage_service.save_analysis({**result, "filename": file.filename, "source": "Gemini Vision"})
+    return result
+
+@router.post("/qr-text")
+async def analyze_qr_text(data: dict):
+    content = data.get("content")
+    if not content:
+        return {"error": "No content provided"}
+        
+    result = await ai_service.analyze_qr_content(content)
+    # Save QR Text Analysis
+    storage_service.save_analysis({**result, "filename": "QR_CONTENT", "source": "Gemini QR"})
     return result
 
 @router.post("/url")

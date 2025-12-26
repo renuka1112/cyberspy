@@ -45,6 +45,39 @@ class AIService:
             print(f"Gemini Analysis Failed: {e}")
             return self._mock_response()
 
+    async def analyze_qr_content(self, content: str):
+        if not self.model:
+            return self._mock_response()
+
+        prompt = f"""
+        Analyze the following text derived from a QR Code for security threats.
+        Decoded Content: "{content}"
+        
+        Determine if this is a malicious URL, a phishing attempt, a command injection payload, or safe text.
+        
+        Provide a strict JSON response (no markdown, no backticks):
+        {{
+            "decoded_content": "{content}",
+            "risk_score": (integer 0-100),
+            "summary": "Analysis of the QR content destination/intent",
+            "threats": ["list", "of", "threats"],
+            "is_qr": true
+        }}
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            clean_text = response.text.replace('```json', '').replace('```', '').strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            print(f"Gemini QR Text Analysis Failed: {e}")
+            return {
+                "decoded_content": content,
+                "risk_score": 0,
+                "summary": "AI Processing Error",
+                "threats": [],
+                "is_qr": True
+            }
+
     async def analyze_image(self, image_bytes: bytes, mime_type: str):
         if not self.model:
             return self._mock_response()

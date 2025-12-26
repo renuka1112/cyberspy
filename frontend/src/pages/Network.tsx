@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import axios from 'axios';
+import jsQR from 'jsqr';
 
 const NetworkSecurity = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -104,15 +105,52 @@ const NetworkSecurity = () => {
 
   const processQrImage = async (file: File) => {
     setIsQrScanning(true);
-    const formData = new FormData();
-    formData.append('file', file);
 
     try {
-      const res = await axios.post('http://localhost:8000/api/analyze/qr', formData);
-      setQrResult(res.data);
+      // 1. Convert File to Image Bitmap or use FileReader
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          // 2. Scan with jsQR
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+          if (code) {
+            // 3. Send DECODED string to backend
+            try {
+              const res = await axios.post('http://localhost:8000/api/analyze/qr-text', {
+                content: code.data
+              });
+              setQrResult(res.data);
+            } catch (err) {
+              console.error("Analysis error", err);
+            }
+          } else {
+            setQrResult({
+              is_qr: false,
+              decoded_content: "No QR Code found in image",
+              risk_score: 0,
+              summary: "Could not decode any QR data locally.",
+              threats: []
+            });
+          }
+          setIsQrScanning(false);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+
     } catch (err) {
-      console.error("QR Scan error", err);
-    } finally {
+      console.error("QR Processing error", err);
       setIsQrScanning(false);
     }
   };
