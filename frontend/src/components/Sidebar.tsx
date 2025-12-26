@@ -1,15 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  FileSearch, 
-  Activity, 
-  Network, 
-  Globe, 
-  MessageSquare, 
-  BarChart3, 
-  FileCode, 
-  ShieldAlert 
+import {
+  LayoutDashboard,
+  FileSearch,
+  Activity,
+  Network,
+  Globe,
+  MessageSquare,
+  BarChart3,
+  FileCode,
+  ShieldAlert
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -33,17 +33,16 @@ const Sidebar = () => {
         </div>
         <h1 className="text-xl font-bold tracking-tighter text-cyber-blue">CYBER<span className="text-white">SPY</span></h1>
       </div>
-      
+
       <nav className="flex-1 space-y-2 overflow-y-auto scrollbar-hide">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
-                isActive 
-                  ? 'bg-cyber-blue text-cyber-black shadow-neon-blue' 
-                  : 'text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-white'
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${isActive
+                ? 'bg-cyber-blue/10 border border-cyber-blue/50 text-cyber-blue shadow-[0_0_15px_rgba(0,242,255,0.2)]'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
               }`
             }
           >
@@ -52,7 +51,7 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-      
+
       <div className="mt-auto p-4 glass-morphism rounded-2xl border-cyber-blue border-opacity-20">
         <div className="text-xs text-gray-500 mb-1">System Status</div>
         <div className="flex items-center gap-2">

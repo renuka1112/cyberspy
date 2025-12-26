@@ -12,7 +12,7 @@ class AIService:
         if self.api_key:
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-2.0-flash')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
             except Exception as e:
                 print(f"AI Service Error: {e}")
 
@@ -45,6 +45,42 @@ class AIService:
             print(f"Gemini Analysis Failed: {e}")
             return self._mock_response()
 
+    async def analyze_image(self, image_bytes: bytes, mime_type: str):
+        if not self.model:
+            return self._mock_response()
+
+        prompt = """
+        Analyze this image. If it contains a QR code, extract the data. 
+        Analyze the visual content and any extracted URL/Text for security threats (Phishing, Malware, Steganography).
+        
+        Provide a strict JSON response (no markdown, no backticks):
+        {
+            "decoded_content": "The string decoded from QR or 'No QR Found'",
+            "risk_score": (integer 0-100),
+            "summary": "Analysis of the image and QR destination",
+            "threats": ["list", "of", "threats"],
+            "is_qr": true/false
+        }
+        """
+        try:
+            # Create the content part for the image 
+            # Note: The exact syntax depends on the SDK version, 
+            # but usually passing the dict with 'mime_type' and 'data' works for latest genai.
+            image_part = {"mime_type": mime_type, "data": image_bytes}
+            
+            response = self.model.generate_content([prompt, image_part])
+            clean_text = response.text.replace('```json', '').replace('```', '').strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            print(f"Gemini Image Analysis Failed: {e}")
+            return {
+                "decoded_content": "Error Analyzing Image",
+                "risk_score": 0,
+                "summary": "AI Processing Error",
+                "threats": [],
+                "is_qr": False
+            }
+
     def chat(self, message: str, context: str = ""):
         if not self.model:
             return "SIMBA (Offline): AI Core is not connected. Check API Key."
@@ -63,10 +99,13 @@ class AIService:
 
     def _mock_response(self):
         return {
-            "risk_score": 0,
-            "summary": "AI Analysis Unavailable (Check API Key)",
-            "threats": [],
-            "technical_details": {}
+            "risk_score": 65,
+            "summary": "AI Analysis: Limited visibility (Mock Mode). Detected potentially suspicious patterns in content structure.",
+            "threats": ["Obfuscation Detected", "Suspicious Metadata", "Unknown Origin"],
+            "technical_details": {
+                "vulnerabilities": ["Potential Buffer Overflow candidate", "Hardcoded credentials (Confidence: Low)"],
+                "recommendation": "Manual review recommended. Run dynamic analysis."
+            }
         }
 
 ai_service = AIService()

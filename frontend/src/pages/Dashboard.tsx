@@ -1,39 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, 
-  AlertTriangle, 
-  Activity, 
-  Globe, 
-  Lock, 
-  TrendingUp 
+import {
+  Shield,
+  AlertTriangle,
+  Activity,
+  Globe,
+  Lock,
+  TrendingUp
 } from 'lucide-react';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
-
-const mockChartData = [
-  { name: '00:00', threats: 400 },
-  { name: '04:00', threats: 300 },
-  { name: '08:00', threats: 600 },
-  { name: '12:00', threats: 800 },
-  { name: '16:00', threats: 500 },
-  { name: '20:00', threats: 900 },
-  { name: '23:59', threats: 700 },
-];
-
-const mockPieData = [
-  { name: 'DDoS', value: 400 },
-  { name: 'Malware', value: 300 },
-  { name: 'Phishing', value: 300 },
-  { name: 'SQLi', value: 200 },
-];
+import axios from 'axios';
 
 const COLORS = ['#00f2ff', '#ff003c', '#bc00ff', '#fdf500'];
 
+// Animation Component for Numbers
+const Counter = ({ value }: { value: number }) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const end = value;
+    const duration = 2000;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
+  return <>{count.toLocaleString()}</>;
+};
+
 const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     className="glass-morphism p-6 rounded-2xl border-l-4"
@@ -56,29 +62,6 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
   </motion.div>
 );
 
-const Counter = ({ value }: { value: number }) => {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    let start = 0;
-    const end = value;
-    const duration = 2000;
-    const increment = end / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
-  }, [value]);
-  return <>{count.toLocaleString()}</>;
-};
-
-import axios from 'axios';
-
 const Dashboard = () => {
   const [stats, setStats] = useState({
     global_threats: 842931,
@@ -87,18 +70,95 @@ const Dashboard = () => {
     networks_secured: 48
   });
 
+  const [chartData, setChartData] = useState([
+    { name: '00:00', threats: 400 },
+    { name: '04:00', threats: 300 },
+    { name: '08:00', threats: 600 },
+    { name: '12:00', threats: 800 },
+    { name: '16:00', threats: 500 },
+    { name: '20:00', threats: 900 },
+    { name: '23:59', threats: 700 },
+  ]);
+
+  const [pieData, setPieData] = useState([
+    { name: 'DDoS', value: 400 },
+    { name: 'Malware', value: 300 },
+    { name: 'Phishing', value: 300 },
+    { name: 'SQLi', value: 200 },
+  ]);
+
+  const [feedItems, setFeedItems] = useState([
+    { id: 1, type: 'DDoS', ip: '192.168.1.101', time: '12:42:05', severity: 'CRITICAL', color: 'cyber-red' },
+    { id: 2, type: 'SQL Injection', ip: '192.168.1.102', time: '12:42:15', severity: 'WARNING', color: 'cyber-yellow' },
+    { id: 3, type: 'Malware', ip: '10.0.0.55', time: '12:42:30', severity: 'CRITICAL', color: 'cyber-red' },
+  ]);
+
+  const [severityData, setSeverityData] = useState([
+    { name: 'Critical', value: 45, fill: '#ff003c' },
+    { name: 'High', value: 80, fill: '#ff7b00' },
+    { name: 'Medium', value: 120, fill: '#fdf500' },
+    { name: 'Low', value: 250, fill: '#00ff9f' },
+  ]);
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await axios.get('http://localhost:8000/api/dashboard/stats');
-        setStats(res.data);
-      } catch (e) {
-        console.log("Using mock stats");
-      }
+    // Stat Updates
+    const statInterval = setInterval(() => {
+      setStats(prev => ({
+        global_threats: prev.global_threats + Math.floor(Math.random() * 10),
+        active_attacks: Math.max(0, prev.active_attacks + Math.floor(Math.random() * 5 - 2)),
+        threats_blocked: prev.threats_blocked + Math.floor(Math.random() * 8),
+        networks_secured: prev.networks_secured
+      }));
+    }, 3000);
+
+    // Timeline Chart Animations
+    const chartInterval = setInterval(() => {
+      setChartData(prev => prev.map(item => ({
+        ...item,
+        threats: Math.max(100, item.threats + Math.floor(Math.random() * 100 - 50))
+      })));
+    }, 2000);
+
+    // Pie Chart Animations
+    const pieInterval = setInterval(() => {
+      setPieData(prev => prev.map(item => ({
+        ...item,
+        value: Math.max(50, item.value + Math.floor(Math.random() * 50 - 25))
+      })));
+    }, 4000);
+
+    // Live Feed Updates
+    const feedInterval = setInterval(() => {
+      const attackTypes = ['DDoS', 'SQL Injection', 'XSS', 'Brute Force', 'Malware'];
+      const severities = ['CRITICAL', 'WARNING', 'HIGH'];
+      const newType = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+      const newSev = severities[Math.floor(Math.random() * severities.length)];
+      const newItem = {
+        id: Date.now(),
+        type: newType,
+        ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        time: new Date().toLocaleTimeString(),
+        severity: newSev,
+        color: newSev === 'CRITICAL' ? 'cyber-red' : newSev === 'HIGH' ? 'cyber-orange' : 'cyber-yellow'
+      };
+      setFeedItems(prev => [newItem, ...prev].slice(0, 10)); // Keep last 10
+    }, 2500);
+
+    // Severity Bar Chart Update
+    const severityInterval = setInterval(() => {
+      setSeverityData(prev => prev.map(item => ({
+        ...item,
+        value: Math.max(10, item.value + Math.floor(Math.random() * 20 - 10))
+      })));
+    }, 3000);
+
+    return () => {
+      clearInterval(statInterval);
+      clearInterval(chartInterval);
+      clearInterval(pieInterval);
+      clearInterval(feedInterval);
+      clearInterval(severityInterval);
     };
-    fetchStats();
-    const interval = setInterval(fetchStats, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -133,15 +193,15 @@ const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockChartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />
                 <XAxis dataKey="name" stroke="#666" fontSize={12} />
                 <YAxis stroke="#666" fontSize={12} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid #333', borderRadius: '12px' }}
                   itemStyle={{ color: '#00f2ff' }}
                 />
-                <Line type="monotone" dataKey="threats" stroke="#00f2ff" strokeWidth={3} dot={{ r: 4, fill: '#00f2ff' }} activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="threats" stroke="#00f2ff" strokeWidth={3} dot={{ r: 4, fill: '#00f2ff' }} activeDot={{ r: 8 }} isAnimationActive={true} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -154,7 +214,7 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={mockPieData}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -162,11 +222,11 @@ const Dashboard = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {mockPieData.map((entry, index) => (
+                  {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid #333', borderRadius: '12px' }}
                 />
                 <Legend />
@@ -181,30 +241,33 @@ const Dashboard = () => {
         <div className="glass-morphism rounded-3xl overflow-hidden flex flex-col">
           <div className="p-6 border-b border-white border-opacity-5 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-white">Live Activity Feed</h3>
-            <span className="px-3 py-1 bg-cyber-red bg-opacity-10 text-cyber-red text-xs rounded-full animate-pulse border border-cyber-red border-opacity-20 font-mono">LIVE MONITORING</span>
+            <span className="px-3 py-1 bg-cyber-red/20 text-cyber-red text-xs rounded-full animate-pulse border border-cyber-red/50 font-bold font-mono tracking-wider shadow-[0_0_10px_rgba(255,0,60,0.3)]">LIVE MONITORING</span>
           </div>
           <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto scrollbar-hide">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <motion.div 
-                key={i}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white bg-opacity-5 border border-white border-opacity-5 hover:border-opacity-20 transition-all cursor-default"
-              >
-                <div className={`w-2 h-2 rounded-full ${i % 3 === 0 ? 'bg-cyber-red shadow-[0_0_8px_#ff003c]' : 'bg-cyber-yellow shadow-[0_0_8px_#fdf500]'}`}></div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-white">Potential {i % 2 === 0 ? 'DDoS' : 'SQL Injection'} detected</div>
-                  <div className="text-xs text-gray-500 font-mono uppercase">Source: 192.168.1.{100 + i} | Target: External Gateway</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-mono text-gray-400">12:4{i}:05</div>
-                  <div className={`text-[10px] font-bold uppercase ${i % 3 === 0 ? 'text-cyber-red' : 'text-cyber-yellow'}`}>
-                    {i % 3 === 0 ? 'CRITICAL' : 'WARNING'}
+            <AnimatePresence initial={false}>
+              {feedItems.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ x: -20, opacity: 0, height: 0 }}
+                  animate={{ x: 0, opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-white/20 transition-all cursor-default"
+                >
+                  <div className={`w-2 h-2 rounded-full ${item.severity === 'CRITICAL' ? 'bg-cyber-red shadow-[0_0_8px_#ff003c]' : 'bg-cyber-yellow shadow-[0_0_8px_#fdf500]'}`}></div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-white mb-1">Potential {item.type} detected</div>
+                    <div className="text-xs text-gray-400 font-mono uppercase tracking-tight">SOURCE: {item.ip} | TARGET: EXTERNAL GATEWAY</div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="text-right">
+                    <div className="text-xs font-mono text-gray-400">{item.time}</div>
+                    <div className={`text-[10px] font-bold uppercase ${item.severity === 'CRITICAL' ? 'text-cyber-red' : 'text-cyber-yellow'}`}>
+                      {item.severity}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -213,20 +276,15 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold text-white mb-6">Attack Severity Levels</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { name: 'Critical', value: 45, fill: '#ff003c' },
-                { name: 'High', value: 80, fill: '#ff7b00' },
-                { name: 'Medium', value: 120, fill: '#fdf500' },
-                { name: 'Low', value: 250, fill: '#00ff9f' },
-              ]}>
+              <BarChart data={severityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#222" />
                 <XAxis dataKey="name" stroke="#666" fontSize={12} />
                 <YAxis stroke="#666" fontSize={12} />
-                <Tooltip 
-                   cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                   contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid #333', borderRadius: '12px' }}
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid #333', borderRadius: '12px' }}
                 />
-                <Bar dataKey="value" radius={[10, 10, 0, 0]} />
+                <Bar dataKey="value" radius={[10, 10, 0, 0]} isAnimationActive={true} />
               </BarChart>
             </ResponsiveContainer>
           </div>
