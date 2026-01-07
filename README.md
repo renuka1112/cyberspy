@@ -106,3 +106,10 @@ This project is a demonstration of **Defensive Security Tooling**. While it simu
 ---
 project deployment link: https://cyberspy-jet.vercel.app/
 
+## 🎥 Project Demo Video
+
+The complete screen-recorded demonstration of the project is available here:
+
+[▶️ Click to watch the demo video](demo/project-demo.mp4)
+
+
