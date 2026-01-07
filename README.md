@@ -110,7 +110,8 @@ project deployment link: https://cyberspy-jet.vercel.app/
 
 The complete screen-recorded demonstration of the project is available here:
 
-[▶️ Click to watch the demo video](demo/project-demo%20(1).mp4)
+[▶️ Click to watch the demo video](demo/project-demo.mp4)
+
 
 
 
