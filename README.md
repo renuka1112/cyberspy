@@ -108,7 +108,15 @@ project deployment link: https://cyberspy-jet.vercel.app/
 
 ## 🎥 Project Demo Video
 
-The complete screen-recorded demonstration of the project is available below:
+The screen-recorded demonstration of this project is included in the repository.
 
-[▶️ Watch Project Demo Video](https://raw.githubusercontent.com/renuka1112/cyberspy/main/demo/project-demo%20(2).mp4)
+📁 Location:
+- The demo video is available inside the **`demo/`** folder of this repository.
+- File name: `project-demo (2).mp4`
+
+📌 Note:
+- GitHub does not support inline video playback in README files.
+- Please open the `demo` folder and download or play the video locally to view the full demonstration.
+
+ 
 
