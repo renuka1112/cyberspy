@@ -114,14 +114,7 @@ The screen-recorded demonstration of this project is included in the repository.
 - The demo video is available inside the **`demo/`** folder of this repository.
 - File name: `project-demo (2).mp4`
 
-📌 Note:
-- GitHub does not support inline video playback in README files.
-- Please open the `demo` folder and download or play the video locally to view the full demonstration.
 
- 
-
-
-https://github.com/user-attachments/assets/f103c45b-3e64-4079-908f-20e24e686ada
-
+https://github.com/user-attachments/assets/4623276f-a8c4-414a-a828-58aa94bfc35e
 
 
